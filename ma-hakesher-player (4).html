@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מה הקשר?</title>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HDWWMFNS9E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HDWWMFNS9E');
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0e17;
+    --surface: #1a1828;
+    --text: #fffffe;
+    --muted: #a7a9be;
+    --c1: #ff8906; /* ירקרק */
+    --c2: #3da9fc; /* כחול */
+    --c3: #ef4565; /* אדום */
+    --c4: #44cf6c; /* ירוק */
+    --selected: #f3d060;
+    --shake-dist: 6px;
+  }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 12px 40px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 6vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--c1), var(--c2), var(--c3), var(--c4));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 1rem;
+    margin-top: 6px;
+  }
+
+  #game-area {
+    width: 100%;
+    max-width: 580px;
+  }
+
+  /* ── mistakes ── */
+  .mistakes-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 18px;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .dot.used { background: var(--c3); }
+
+  /* ── solved groups ── */
+  #solved-groups { display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px; }
+
+  .solved-card {
+    border-radius: 14px;
+    padding: 16px 20px;
+    text-align: center;
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .solved-card .cat-name { font-weight: 900; font-size: 1.05rem; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .solved-card .cat-words { font-size: 0.88rem; opacity: 0.85; }
+
+  /* ── grid ── */
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .word-tile {
+    background: var(--surface);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    padding: 0;
+    aspect-ratio: 1 / 0.75;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: clamp(0.78rem, 2.2vw, 1rem);
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
+    line-height: 1.2;
+    padding: 6px;
+  }
+
+  .word-tile:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.4); }
+  .word-tile.selected {
+    background: var(--selected);
+    color: #0f0e17;
+    border-color: var(--selected);
+    transform: translateY(-4px) scale(1.04);
+    box-shadow: 0 8px 24px rgba(243, 208, 96, 0.35);
+  }
+  .word-tile.wrong-shake {
+    animation: shake 0.45s ease;
+  }
+  .word-tile.correct-pop {
+    animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  /* ── buttons ── */
+  .actions { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+
+  .btn {
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+  .btn:hover { transform: scale(1.05); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+
+  .btn-primary { background: var(--text); color: var(--bg); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 2px solid #333; }
+
+  /* ── message banner ── */
+  #message {
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 700;
+    min-height: 28px;
+    margin-bottom: 10px;
+    transition: opacity 0.3s;
+    color: var(--selected);
+  }
+
+  /* ── win screen ── */
+  #win-screen {
+    display: none;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+  }
+  #win-screen h2 { font-size: 2rem; font-weight: 900; margin-bottom: 10px; }
+  #win-screen p { color: var(--muted); margin-bottom: 20px; }
+
+  /* ── edit modal ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 28px;
+    width: min(95vw, 540px);
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: popIn 0.3s ease;
+  }
+  .modal h2 { font-size: 1.4rem; font-weight: 900; margin-bottom: 18px; }
+
+  .group-editor { margin-bottom: 18px; }
+  .group-editor label { display: block; font-size: 0.82rem; color: var(--muted); margin-bottom: 4px; }
+  .group-editor input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid #333;
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .group-editor input:focus { border-color: var(--selected); }
+  .color-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent;
+    transition: transform 0.15s, border-color 0.15s;
+  }
+  .color-swatch.active { border-color: white; transform: scale(1.2); }
+
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
+  /* ── splash screen ── */
+  #splash {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 30px;
+    text-align: center;
+    animation: fadeIn 0.6s ease;
+  }
+  #splash .splash-emoji {
+    font-size: 4rem;
+    margin-bottom: 16px;
+    animation: float 3s ease-in-out infinite;
+  }
+  #splash h1 {
+    font-size: clamp(2.8rem, 10vw, 5rem);
+    margin-bottom: 12px;
+  }
+  #splash .splash-sub {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 320px;
+    line-height: 1.6;
+    margin-bottom: 10px;
+  }
+  #splash .splash-hint {
+    color: var(--selected);
+    font-size: 0.88rem;
+    margin-bottom: 36px;
+    opacity: 0.8;
+  }
+  #btn-start {
+    font-family: 'Heebo', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 900;
+    padding: 16px 48px;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--c1), var(--c3));
+    color: white;
+    box-shadow: 0 8px 32px rgba(239, 69, 101, 0.35);
+    transition: transform 0.15s, box-shadow 0.15s;
+    letter-spacing: 0.5px;
+  }
+  #btn-start:hover { transform: scale(1.06); box-shadow: 0 12px 40px rgba(239,69,101,0.5); }
+  #btn-start:active { transform: scale(0.97); }
+
+  .splash-dots {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 32px;
+    justify-content: center;
+  }
+  .splash-dot {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  @keyframes splashOut {
+    to { opacity: 0; transform: scale(1.05); pointer-events: none; }
+  }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-var(--shake-dist)); }
+    40% { transform: translateX(var(--shake-dist)); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  @keyframes popIn {
+    0% { transform: scale(0.7); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-emoji">🧠</div>
+  <h1>מה הקשר?</h1>
+  <p class="splash-sub">16 מילים, 4 קבוצות נסתרות — האם תמצא את הקשר?</p>
+  <div class="splash-dots">
+    <div class="splash-dot" style="background:#ff8906"></div>
+    <div class="splash-dot" style="background:#3da9fc"></div>
+    <div class="splash-dot" style="background:#ef4565"></div>
+    <div class="splash-dot" style="background:#44cf6c"></div>
+  </div>
+  <p class="splash-hint">בחר 4 מילים שיש ביניהן קשר ולחץ "נחש!"</p>
+  <button id="btn-start">בוא נשחק 🎮</button>
+</div>
+
+<header>
+  <h1>מה הקשר?</h1>
+  <p class="subtitle">מצא את ארבע הקבוצות המסתתרות בין 16 המילים</p>
+</header>
+
+<div id="game-area">
+  <div id="solved-groups"></div>
+
+  <div id="grid"></div>
+
+  <div id="message"></div>
+
+
+
+  <div class="actions">
+    <button class="btn btn-ghost" id="btn-shuffle">ערבב</button>
+    <button class="btn btn-ghost" id="btn-clear">נקה בחירה</button>
+    <button class="btn btn-primary" id="btn-guess" disabled>נחש!</button>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-ghost" id="btn-restart">🔄 התחל מחדש</button>
+  </div>
+
+  <div id="win-screen">
+    <h2>🎉 כל הכבוד!</h2>
+    <p id="win-msg"></p>
+    <button class="btn btn-primary" id="btn-play-again">שחק שוב</button>
+  </div>
+</div>
+
+
+
+<script>
+const PALETTE = ['#ff8906','#3da9fc','#ef4565','#44cf6c','#f3d060','#9b5de5','#f15bb5','#00bbf9'];
+
+const DEFAULT_GROUPS = [
+  { name: 'בפועל', color: '#ff8906', words: ['מעשה','ממש','ההוראה','מסירות נפש'] },
+  { name: 'עולמות', color: '#3da9fc', words: ['עשייה','תוהו','תיקון','בריאה'] },
+  { name: 'אורות', color: '#ef4565', words: ['מרובים','בכלים','שני','עליונים'] },
+  { name: 'אנגרמות בחסידות', color: '#44cf6c', words: ['מחשבה','תניא','טבילה','צהר'] },
+];
+
+let groups = JSON.parse(JSON.stringify(DEFAULT_GROUPS));
+let tiles = [];
+let selected = new Set();
+let mistakes = 0;
+let solvedGroups = [];
+const MAX_MISTAKES = 4;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function init() {
+  mistakes = 0;
+  solvedGroups = [];
+  selected.clear();
+  document.getElementById('solved-groups').innerHTML = '';
+  document.getElementById('win-screen').style.display = 'none';
+  document.getElementById('game-area').querySelector('#grid').style.display = 'grid';
+  document.querySelectorAll('.actions').forEach(a => a.style.display = 'flex');
+  document.getElementById('message').textContent = '';
+  tiles = shuffle(groups.flatMap(g => g.words.map(w => ({ word: w, group: g.name }))));
+  renderGrid();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  tiles.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'word-tile' + (selected.has(i) ? ' selected' : '');
+    div.textContent = t.word;
+    div.dataset.index = i;
+    div.addEventListener('click', () => toggleSelect(i, div));
+    grid.appendChild(div);
+  });
+  updateGuessBtn();
+}
+
+function toggleSelect(i, el) {
+  if (selected.has(i)) {
+    selected.delete(i);
+    el.classList.remove('selected');
+  } else {
+    if (selected.size >= 4) return;
+    selected.add(i);
+    el.classList.add('selected');
+  }
+  updateGuessBtn();
+}
+
+function updateGuessBtn() {
+  document.getElementById('btn-guess').disabled = selected.size !== 4;
+}
+
+function guess() {
+  const indices = [...selected];
+  const words = indices.map(i => tiles[i].word);
+  const groupNames = indices.map(i => tiles[i].group);
+  const allSame = groupNames.every(g => g === groupNames[0]);
+
+  if (allSame) {
+    const gName = groupNames[0];
+    const gData = groups.find(g => g.name === gName);
+    showMessage('✅ נכון! ' + gName, gData.color);
+    // animate
+    indices.forEach(i => {
+      const el = document.querySelector(`.word-tile[data-index="${i}"]`);
+      if (el) el.classList.add('correct-pop');
+    });
+    setTimeout(() => {
+      solvedGroups.push(gData);
+      tiles = tiles.filter((_, i) => !selected.has(i));
+      selected.clear();
+      renderSolvedCard(gData);
+      renderGrid();
+      if (solvedGroups.length === groups.length) showWin();
+    }, 400);
+  } else {
+    mistakes++;
+    // check one away
+    const counts = {};
+    groupNames.forEach(g => counts[g] = (counts[g] || 0) + 1);
+    const maxCount = Math.max(...Object.values(counts));
+    const msg = maxCount === 3 ? '😬 כמעט! פספסת בקושי אחד' : '❌ לא נכון, נסה שוב';
+    showMessage(msg, '#ef4565');
+    // shake
+    indices.forEach(i => {
+      const el = document.querySelector(`.word-tile[data-index="${i}"]`);
+      if (el) { el.classList.remove('wrong-shake'); void el.offsetWidth; el.classList.add('wrong-shake'); }
+    });
+    selected.clear();
+    setTimeout(() => {
+      document.querySelectorAll('.word-tile').forEach(el => el.classList.remove('selected', 'wrong-shake'));
+      updateGuessBtn();
+    }, 450);
+    if (mistakes >= MAX_MISTAKES) showMessage('😅 הרבה טעויות — אבל אפשר להמשיך!', '#ef4565');
+  }
+}
+
+function showMessage(msg, color) {
+  const el = document.getElementById('message');
+  el.textContent = msg;
+  el.style.color = color || 'var(--selected)';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.textContent = '', 3000);
+}
+
+function renderSolvedCard(g) {
+  const container = document.getElementById('solved-groups');
+  const card = document.createElement('div');
+  card.className = 'solved-card';
+  card.style.background = g.color + '22';
+  card.style.border = '2px solid ' + g.color;
+  card.innerHTML = `<div class="cat-name" style="color:${g.color}">${g.name}</div>
+    <div class="cat-words">${g.words.join(' • ')}</div>`;
+  container.appendChild(card);
+}
+
+function showWin() {
+  const mistakes_txt = mistakes === 0 ? 'ללא טעויות! מדהים 🏆' : `עם ${mistakes} טעות${mistakes > 1 ? 'יות' : ''}`;
+  document.getElementById('win-msg').textContent = 'סיימת את המשחק ' + mistakes_txt;
+  document.getElementById('win-screen').style.display = 'block';
+  document.getElementById('grid').style.display = 'none';
+  document.querySelectorAll('.actions').forEach(a => a.style.display = 'none');
+}
+
+function showLoss() {
+  const remaining = groups.filter(g => !solvedGroups.find(s => s.name === g.name));
+  remaining.forEach(g => {
+    renderSolvedCard(g);
+  });
+  tiles = [];
+  selected.clear();
+  renderGrid();
+  showMessage('😔 נגמרו הנסיונות — הנה הפתרון', '#ef4565');
+  setTimeout(() => {
+    document.getElementById('win-msg').textContent = 'שחקת עם ' + MAX_MISTAKES + ' טעויות — נסה שוב!';
+    document.getElementById('win-screen').style.display = 'block';
+    document.getElementById('grid').style.display = 'none';
+    document.querySelectorAll('.actions').forEach(a => a.style.display = 'none');
+  }, 1500);
+}
+
+// Shuffle button
+document.getElementById('btn-shuffle').addEventListener('click', () => {
+  tiles = shuffle(tiles);
+  selected.clear();
+  renderGrid();
+});
+
+// Clear
+document.getElementById('btn-clear').addEventListener('click', () => {
+  selected.clear();
+  renderGrid();
+});
+
+// Guess
+document.getElementById('btn-guess').addEventListener('click', guess);
+
+// Restart
+document.getElementById('btn-restart').addEventListener('click', init);
+document.getElementById('btn-play-again').addEventListener('click', init);
+
+// Splash screen
+document.getElementById('btn-start').addEventListener('click', () => {
+  const splash = document.getElementById('splash');
+  splash.style.animation = 'splashOut 0.4s ease forwards';
+  setTimeout(() => splash.style.display = 'none', 400);
+});
+
+// Start!
+init();
+</script>
+</body>
+</html>
