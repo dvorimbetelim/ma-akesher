@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>משחקי חסידות</title>
+<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-HDWWMFNS9E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-HDWWMFNS9E');
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;700;900&family=Frank+Ruhl+Libre:wght@300;400;700;900&family=Secular+One&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -440,9 +448,11 @@ function showGame(game) {
 
   if (game === 'kesher') {
     document.getElementById('kesher-screen').style.display = 'flex';
+    gtag('event', 'game_start', { game_name: 'מה הקשר' });
     kInit();
   } else {
     document.getElementById('tzaddik-screen').style.display = 'flex';
+    gtag('event', 'game_start', { game_name: 'זהה את הדמות' });
     tzStartGame();
   }
 }
@@ -558,6 +568,7 @@ function kShowWin() {
   document.getElementById('kesher-win-screen').style.display = 'block';
   document.getElementById('grid').style.display = 'none';
   document.querySelectorAll('#kesher-screen .actions').forEach(a => a.style.display = 'none');
+  gtag('event', 'game_complete', { game_name: 'מה הקשר', mistakes: kMistakes });
   setTimeout(() => document.getElementById('kesher-promo').classList.add('visible'), 600);
 }
 
@@ -674,9 +685,11 @@ function tzShowResult() {
   if (tzSolved) {
     document.getElementById('result-verdict').textContent = `ניחשת ברמה ${tzLevel+1} 🎉`;
     document.getElementById('result-score').innerHTML = `${tzPoints}<small>נקודות</small>`;
+    gtag('event', 'game_complete', { game_name: 'זהה את הדמות', solved: true, level: tzLevel+1, points: tzPoints });
   } else {
     document.getElementById('result-verdict').textContent = 'לא ניחשת הפעם 😔';
     document.getElementById('result-score').innerHTML = `0<small>נקודות</small>`;
+    gtag('event', 'game_complete', { game_name: 'זהה את הדמות', solved: false, level: tzLevel+1, points: 0 });
   }
   setTimeout(() => document.getElementById('tzaddik-promo').classList.add('visible'), 600);
 }
